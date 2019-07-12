@@ -82,6 +82,13 @@ public struct TLPhotosPickerConfigure {
     public var fetchCollectionTypes: [(PHAssetCollectionType,PHAssetCollectionSubtype)]? = nil
     public var groupByFetch: PHFetchedResultGroupedBy? = nil
     public var supportedInterfaceOrientations: UIInterfaceOrientationMask = .portrait
+	
+	// Done button is disable when nothing is selected. And eneabled when something is selected
+	public var autoEnableDoneButton = true
+	
+	// Add the number of selected asset in the done title
+	public var doneButtonCounter = true
+	
     public init() {
         
     }
@@ -118,7 +125,21 @@ open class TLPhotosPickerViewController: UIViewController {
     
     public weak var delegate: TLPhotosPickerViewControllerDelegate? = nil
     public weak var logDelegate: TLPhotosPickerLogDelegate? = nil
-    public var selectedAssets = [TLPHAsset]()
+	public var selectedAssets = [TLPHAsset]() {
+		didSet {
+			if configure.autoEnableDoneButton {
+				doneButton.isEnabled = selectedAssets.count > 0
+			}
+			if configure.doneButtonCounter {
+				if selectedAssets.count == 0 {
+					doneButton.title = configure.doneTitle
+				} else {
+					let leftToRight = UIApplication.shared.userInterfaceLayoutDirection == .leftToRight
+					doneButton.title = leftToRight ? "\(configure.doneTitle) (\(selectedAssets.count))" : "(\(selectedAssets.count) \(configure.doneTitle))"
+				}
+			}
+		}
+	}
     public var configure = TLPhotosPickerConfigure()
     public var customDataSouces: TLPhotopickerDataSourcesProtocol? = nil
     
@@ -316,6 +337,9 @@ extension TLPhotosPickerViewController {
         self.subTitleLabel.text = self.configure.tapHereToChange
         self.cancelButton.title = self.configure.cancelTitle
         self.doneButton.title = self.configure.doneTitle
+		if configure.autoEnableDoneButton {
+			self.doneButton.isEnabled = false
+		}
         self.doneButton.setTitleTextAttributes([NSAttributedString.Key.font: UIFont.boldSystemFont(ofSize: UIFont.labelFontSize)], for: .normal)
         self.emptyView.isHidden = true
         self.emptyImageView.image = self.configure.emptyImage
